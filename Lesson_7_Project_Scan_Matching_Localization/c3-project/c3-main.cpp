@@ -41,6 +41,7 @@ PointCloudT pclCloud;
 cc::Vehicle::Control control;
 std::chrono::time_point<std::chrono::system_clock> currentTime;
 vector<ControlState> cs;
+bool icp_ndt = true;
 
 bool refresh_view = false;
 void keyboardEventOccurred(const pcl::visualization::KeyboardEvent &event, void* viewer)
@@ -60,6 +61,14 @@ void keyboardEventOccurred(const pcl::visualization::KeyboardEvent &event, void*
 		cs.push_back(ControlState(-0.1, 0, 0)); 
   	}
 	if(event.getKeySym() == "a" && event.keyDown()){
+		refresh_view = true;
+	}
+	if(event.getKeySym() == "n" && event.keyDown()){
+		icp_ndt = false;
+		refresh_view = true;
+	}
+	if(event.getKeySym() == "i" && event.keyDown()){
+		icp_ndt = true;
 		refresh_view = true;
 	}
 }
@@ -179,8 +188,7 @@ Eigen::Matrix4d NDT(pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointX
 
 
 int main(){
-	//my variables
-	Bool icp_ndt = true;
+	bool first_scan = true;
 	auto client = cc::Client("localhost", 2000);
 	client.SetTimeout(2s);
 	auto world = client.GetWorld();
@@ -278,17 +286,23 @@ int main(){
   		viewer->spinOnce ();
 		
 		if(!new_scan){
-			
+			if(first_scan){ {
+			   
+				pose.position = truePose.position;
+				pose.rotation = truePose.rotation;
+			}
+			first_scan = false;
+
 			new_scan = true;
 			// TODO: (Filter scan using voxel filter)
 			pcl::VoxelGrid<PointT> vg;
   			vg.setInputCloud(scanCloud);
 			double filterRes = 0.5;
 			vg.setLeafSize(filterRes, filterRes, filterRes);
-			typename pcl::PointCloud<PointT>::Ptr cloudFiltered (new pcl::PointCloud<PointT>);
+			// typename pcl::PointCloud<PointT>::Ptr cloudFiltered (new pcl::PointCloud<PointT>);
 			vg.filter(*cloudFiltered);;
 			// TODO: Find pose transform by using ICP or NDT matching
-			Eigen::Matrix4d transform = icp_ndt ? ICP(mapCloud, cloudFiltered, truePose) : NDT(source=mapCloud, startingPose=cloudFiltered, pose=truePose);
+			Eigen::Matrix4d transform = icp_ndt ? ICP(mapCloud, cloudFiltered, truePose) : NDT(cloudFiltered, pose);
 			pose = getPose(transform);
 			// TODO: Transform scan so it aligns with ego's actual pose and render that scan
 			PointCloudT::Ptr transformed_scan (new PointCloudT);
