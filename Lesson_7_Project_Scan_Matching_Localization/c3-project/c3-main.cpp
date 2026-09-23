@@ -101,7 +101,7 @@ void drawCar(Pose pose, int num, Color color, double alpha, pcl::visualization::
 	renderBox(viewer, box, num, color, alpha);
 }
 
-Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations){
+Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=60){
 
 	// Defining a rotation matrix and translation vector
   	Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
@@ -154,7 +154,7 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
 }
 
 Eigen::Matrix4d NDT(pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt, 
-	PointCloudT::Ptr source, Pose startingPose, int iterations){
+	PointCloudT::Ptr source, Pose startingPose, int iterations=60){
 
 	
 	pcl::console::TicToc time;
@@ -180,7 +180,7 @@ Eigen::Matrix4d NDT(pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointX
 
 int main(){
 	//my variables
-	Bool icp = true;
+	Bool icp_ndt = true;
 	auto client = cc::Client("localhost", 2000);
 	client.SetTimeout(2s);
 	auto world = client.GetWorld();
@@ -282,13 +282,13 @@ int main(){
 			new_scan = true;
 			// TODO: (Filter scan using voxel filter)
 			pcl::VoxelGrid<PointT> vg;
-  			vg.setInputCloud(scans[0]);
+  			vg.setInputCloud(scanCloud);
 			double filterRes = 0.5;
 			vg.setLeafSize(filterRes, filterRes, filterRes);
 			typename pcl::PointCloud<PointT>::Ptr cloudFiltered (new pcl::PointCloud<PointT>);
 			vg.filter(*cloudFiltered);;
 			// TODO: Find pose transform by using ICP or NDT matching
-			Eigen::Matrix4d transform = icp ? ICP(mapCloud, cloudFiltered, truePose) : NDT(source=mapCloud, startingPose=cloudFiltered, pose=truePose);
+			Eigen::Matrix4d transform = icp_ndt ? ICP(mapCloud, cloudFiltered, truePose) : NDT(source=mapCloud, startingPose=cloudFiltered, pose=truePose);
 			pose = getPose(transform);
 			// TODO: Transform scan so it aligns with ego's actual pose and render that scan
 			PointCloudT::Ptr transformed_scan (new PointCloudT);
