@@ -110,13 +110,15 @@ void drawCar(Pose pose, int num, Color color, double alpha, pcl::visualization::
 	renderBox(viewer, box, num, color, alpha);
 }
 
-Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=60){
+Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations){
 
 	// Defining a rotation matrix and translation vector
   	Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
 
   	// align source with starting pose
-  	Eigen::Matrix4d initTransform = transform3D(startingPose.rotation.yaw, startingPose.rotation.pitch, startingPose.rotation.roll, startingPose.position.x, startingPose.position.y, startingPose.position.z);
+  	Eigen::Matrix4d initTransform = transform3D(startingPose.rotation.yaw, startingPose.rotation.pitch, 
+												startingPose.rotation.roll, startingPose.position.x, 
+												startingPose.position.y, startingPose.position.z);
   	PointCloudT::Ptr transformSource (new PointCloudT); 
   	pcl::transformPointCloud (*source, *transformSource, initTransform);
 
@@ -162,9 +164,9 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
 
 }
 
-Eigen::Matrix4d NDT(pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt, 
-	PointCloudT::Ptr source, Pose startingPose, int iterations=60){
+Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations){
 
+	pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
 	
 	pcl::console::TicToc time;
 	time.tic ();
@@ -174,6 +176,10 @@ Eigen::Matrix4d NDT(pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointX
   	// Setting max number of registration iterations.
   	ndt.setMaximumIterations (iterations);
 	ndt.setInputSource (source);
+	ndt.setInputTarget (target);
+	ndt.setTransformationEpsilon (.0001);
+  	ndt.setStepSize (1);
+  	ndt.setResolution (1);
   	
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ndt (new pcl::PointCloud<pcl::PointXYZ>);
   	ndt.align (*cloud_ndt, init_guess);
@@ -287,8 +293,7 @@ int main(){
 		
 		if(!new_scan){
 			if(first_scan){ {
-			   
-				pose.position = truePose.position;
+			   	pose.position = truePose.position;
 				pose.rotation = truePose.rotation;
 			}
 			first_scan = false;
