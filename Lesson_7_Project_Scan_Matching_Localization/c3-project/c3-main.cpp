@@ -292,7 +292,7 @@ int main(){
   		viewer->spinOnce ();
 		
 		if(!new_scan){
-			if(first_scan){ {
+			if(first_scan){
 			   	pose.position = truePose.position;
 				pose.rotation = truePose.rotation;
 			}
@@ -307,7 +307,7 @@ int main(){
 			// typename pcl::PointCloud<PointT>::Ptr cloudFiltered (new pcl::PointCloud<PointT>);
 			vg.filter(*cloudFiltered);;
 			// TODO: Find pose transform by using ICP or NDT matching
-			Eigen::Matrix4d transform = icp_ndt ? ICP(mapCloud, cloudFiltered, truePose) : NDT(cloudFiltered, pose);
+			Eigen::Matrix4d transform = icp_ndt ? ICP(mapCloud, cloudFiltered, pose) : NDT(mapCloud,cloudFiltered, pose);
 			pose = getPose(transform);
 			// TODO: Transform scan so it aligns with ego's actual pose and render that scan
 			PointCloudT::Ptr transformed_scan (new PointCloudT);
