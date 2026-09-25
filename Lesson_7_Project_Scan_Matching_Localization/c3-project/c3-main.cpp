@@ -110,7 +110,7 @@ void drawCar(Pose pose, int num, Color color, double alpha, pcl::visualization::
 	renderBox(viewer, box, num, color, alpha);
 }
 
-Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=20){
+Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=60){
 
 	// Defining a rotation matrix and translation vector
   	Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
@@ -164,7 +164,7 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
 
 }
 
-Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=20){
+Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=60){
 
 	pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
 	
@@ -307,11 +307,11 @@ int main(){
 			// typename pcl::PointCloud<PointT>::Ptr cloudFiltered (new pcl::PointCloud<PointT>);
 			vg.filter(*cloudFiltered);;
 			// TODO: Find pose transform by using ICP or NDT matching
-			Eigen::Matrix4d transform = icp_ndt ? ICP(mapCloud, cloudFiltered, pose) : NDT(mapCloud,cloudFiltered, pose);
-			pose = getPose(transform);
+			Eigen::Matrix4d pose_transform = icp_ndt ? ICP(mapCloud, cloudFiltered, pose) : NDT(mapCloud,cloudFiltered, pose);
+			pose = getPose(pose_transform);
 			// TODO: Transform scan so it aligns with ego's actual pose and render that scan
-			PointCloudT::Ptr transformed_scan (new PointCloudT);
-			pcl::transformPointCloud (*cloudFiltered, *transformed_scan, transform);
+			PointCloudT::Ptr transformed_scan(new PointCloudT);
+			pcl::transformPointCloud(*cloudFiltered, *transformed_scan, pose_transform);
 			viewer->removePointCloud("scan");
 			// TODO: Change `scanCloud` below to your transformed scan
 			renderPointCloud(viewer, transformed_scan, "scan", Color(1,0,0) );
