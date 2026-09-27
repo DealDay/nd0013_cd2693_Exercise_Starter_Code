@@ -41,7 +41,10 @@ PointCloudT pclCloud;
 cc::Vehicle::Control control;
 std::chrono::time_point<std::chrono::system_clock> currentTime;
 vector<ControlState> cs;
-bool icp_ndt = true;
+// bool icp_ndt = true;
+enum Registration{Icp, Ndt};
+Registration matching = Ndt;
+Pose pose(Point(0,0,0), Rotate(0,0,0));
 
 bool refresh_view = false;
 void keyboardEventOccurred(const pcl::visualization::KeyboardEvent &event, void* viewer)
@@ -63,12 +66,12 @@ void keyboardEventOccurred(const pcl::visualization::KeyboardEvent &event, void*
 	if(event.getKeySym() == "a" && event.keyDown()){
 		refresh_view = true;
 	}
-	if(event.getKeySym() == "n" && event.keyDown()){
-		icp_ndt = false;
+	else if(event.getKeySym() == "i" && event.keyDown()){
+		matching = Icp;
 		refresh_view = true;
 	}
-	if(event.getKeySym() == "i" && event.keyDown()){
-		icp_ndt = true;
+	else if(event.getKeySym() == "n" && event.keyDown()){
+		matching = Ndt;
 		refresh_view = true;
 	}
 }
@@ -109,6 +112,23 @@ void drawCar(Pose pose, int num, Color color, double alpha, pcl::visualization::
     box.cube_height = 2;
 	renderBox(viewer, box, num, color, alpha);
 }
+
+// bool Displacement( Pose p){
+
+// 	Pose movement = p - pose;
+// 	double tdist = sqrt(movement.position.x * movement.position.x + movement.position.y * movement.position.y + movement.position.z * movement.position.z);
+// 	double adist = max( max( angleMag(movement.rotation.yaw), angleMag(movement.rotation.pitch)), angleMag(movement.rotation.roll) );
+
+// 	if(tdist > distThresh || adist > angleThresh){
+// 		// distHistory.push_back(tdist);
+// 		// angleHistory.push_back(adist);
+// 		pose = p;
+// 		return true;
+// 	}
+// 	else
+// 		return false;
+
+// }
 
 Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=60){
 
@@ -195,6 +215,9 @@ Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
 
 int main(){
 	bool first_scan = true;
+	// double distThresh = 1e-3;
+	// double angleThresh = 1e-3;
+
 	auto client = cc::Client("localhost", 2000);
 	client.SetTimeout(2s);
 	auto world = client.GetWorld();
@@ -228,7 +251,9 @@ int main(){
 	viewer->registerKeyboardCallback(keyboardEventOccurred, (void*)&viewer);
 
 	auto vehicle = boost::static_pointer_cast<cc::Vehicle>(ego_actor);
-	Pose pose(Point(0,0,0), Rotate(0,0,0));
+	// Pose pose(Point(0,0,0), Rotate(0,0,0));
+	auto savedVehicle = boost::static_pointer_cast<cc::Vehicle>(ego_actor);
+	Pose savePose(Point(0,0,0), Rotate(0,0,0));
 
 	// Load map
 	PointCloudT::Ptr mapCloud(new PointCloudT);
@@ -268,6 +293,8 @@ int main(){
 		if(refresh_view){
 			viewer->setCameraPosition(pose.position.x, pose.position.y, 60, pose.position.x+1, pose.position.y+1, 0, 0, 0, 1);
 			refresh_view = false;
+			vehicle = savedVehicle;
+			pose = savePose;
 		}
 		
 		viewer->removeShape("box0");
@@ -307,8 +334,16 @@ int main(){
 			// typename pcl::PointCloud<PointT>::Ptr cloudFiltered (new pcl::PointCloud<PointT>);
 			vg.filter(*cloudFiltered);;
 			// TODO: Find pose transform by using ICP or NDT matching
-			Eigen::Matrix4d pose_transform = icp_ndt ? ICP(mapCloud, cloudFiltered, pose) : NDT(mapCloud,cloudFiltered, pose);
+			// Eigen::Matrix4d pose_transform = icp_ndt ? ICP(mapCloud, cloudFiltered, pose) : NDT(mapCloud,cloudFiltered, pose);
+			// pose = getPose(pose_transform);
+			if(matching == Icp){
+				Eigen::Matrix4d pose_transform = ICP(mapCloud, cloudFiltered, pose);
+			}
+			else if(matching == Ndt){
+				Eigen::Matrix4d pose_transform = NDT(mapCloud, cloudFiltered, pose);
+			}
 			pose = getPose(pose_transform);
+
 			// TODO: Transform scan so it aligns with ego's actual pose and render that scan
 			PointCloudT::Ptr transformed_scan(new PointCloudT);
 			pcl::transformPointCloud(*cloudFiltered, *transformed_scan, pose_transform);
