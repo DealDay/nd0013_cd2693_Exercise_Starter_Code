@@ -187,19 +187,19 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
 Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=60){
 
 	pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
+	// Setting max number of registration iterations.
+  	ndt.setMaximumIterations (iterations);
+	ndt.setInputSource (source);
+	ndt.setInputTarget (target);
+	ndt.setTransformationEpsilon (.000000001);
+  	// ndt.setStepSize (1);
+  	ndt.setResolution (1);
 	
 	pcl::console::TicToc time;
 	time.tic ();
 
 	Eigen::Matrix4f init_guess = transform3D(startingPose.rotation.yaw, startingPose.rotation.pitch, startingPose.rotation.roll, startingPose.position.x, startingPose.position.y, startingPose.position.z).cast<float>();
 
-  	// Setting max number of registration iterations.
-  	ndt.setMaximumIterations (iterations);
-	ndt.setInputSource (source);
-	ndt.setInputTarget (target);
-	ndt.setTransformationEpsilon (.0001);
-  	ndt.setStepSize (1);
-  	ndt.setResolution (1);
   	
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ndt (new pcl::PointCloud<pcl::PointXYZ>);
   	ndt.align (*cloud_ndt, init_guess);
@@ -295,6 +295,7 @@ int main(){
 			refresh_view = false;
 			vehicle = savedVehicle;
 			pose = savePose;
+			maxError = 0;
 		}
 		
 		viewer->removeShape("box0");
@@ -336,11 +337,12 @@ int main(){
 			// TODO: Find pose transform by using ICP or NDT matching
 			// Eigen::Matrix4d pose_transform = icp_ndt ? ICP(mapCloud, cloudFiltered, pose) : NDT(mapCloud,cloudFiltered, pose);
 			// pose = getPose(pose_transform);
+			Eigen::Matrix4d pose_transform;
 			if(matching == Icp){
-				Eigen::Matrix4d pose_transform = ICP(mapCloud, cloudFiltered, pose);
+				pose_transform = ICP(mapCloud, cloudFiltered, pose);
 			}
 			else if(matching == Ndt){
-				Eigen::Matrix4d pose_transform = NDT(mapCloud, cloudFiltered, pose);
+				pose_transform = NDT(mapCloud, cloudFiltered, pose);
 			}
 			pose = getPose(pose_transform);
 
