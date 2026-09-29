@@ -264,6 +264,13 @@ int main(){
 	typename pcl::PointCloud<PointT>::Ptr cloudFiltered (new pcl::PointCloud<PointT>);
 	typename pcl::PointCloud<PointT>::Ptr scanCloud (new pcl::PointCloud<PointT>);
 
+	Eigen::Matrix4d lidarToVehicle = transform3D(lidar_transform.rotation.yaw * pi/180, 
+												lidar_transform.rotation.pitch * pi/180, 
+												lidar_transform.rotation.roll * pi/180, 
+												lidar_transform.location.x, lidar_transform.location.y, lidar_transform.location.z);
+	
+	Eigen::Matrix4d vehicleToLidar = lidarToVehicle.inverse();
+
 	lidar->Listen([&new_scan, &lastScanTime, &scanCloud](auto data){
 
 		if(new_scan){
@@ -321,8 +328,11 @@ int main(){
 		
 		if(!new_scan){
 			if(first_scan){
-			   	pose.position = truePose.position;
-				pose.rotation = truePose.rotation;
+			   	pose = Pose(Point(vehicle->GetTransform().location.x, 
+							vehicle->GetTransform().location.y, vehicle->GetTransform().location.z), 
+							Rotate(vehicle->GetTransform().rotation.yaw * pi/180, 
+							vehicle->GetTransform().rotation.pitch * pi/180, 
+							vehicle->GetTransform().rotation.roll * pi/180));
 			}
 			first_scan = false;
 
@@ -344,7 +354,7 @@ int main(){
 			else if(matching == Ndt){
 				pose_transform = NDT(mapCloud, cloudFiltered, pose);
 			}
-			pose = getPose(pose_transform);
+			pose = getPose(pose_transform * vehicleToLidar);
 
 			// TODO: Transform scan so it aligns with ego's actual pose and render that scan
 			PointCloudT::Ptr transformed_scan(new PointCloudT);
