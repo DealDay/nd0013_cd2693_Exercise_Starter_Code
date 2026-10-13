@@ -283,7 +283,7 @@ int main(){
 			// TODO: Find pose transform by using ICP or NDT matching
 			Eigen::Matrix4d pose_transform;
 			pose_transform  = Icp ? ICP(mapCloud, cloudFiltered, pose) : NDT(mapCloud,cloudFiltered, pose);
-            pose = getPose(pose_transform);
+            pose = getPose(pose_transform) - poseRef;
 
 			// TODO: Transform scan so it aligns with ego's actual pose and render that scan
             PointCloudT::Ptr transformed_scan(new PointCloudT);
