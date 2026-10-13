@@ -402,7 +402,7 @@ int main(){
 		//debugging
 		cout << "True Pose: "; truePose.position.Print(); truePose.rotation.Print();
 		cout << "Estimated Pose: "; pose.position.Print(); pose.rotation.Print();
-		cout << "lidar Pose: "; lidarpose.position.Print(); lidarpose.rotation.Print();
+		cout << "lidar Pose: "; lidarpose.position.Print(); lidarpose.rotation.Print()
 
 			pclCloud.points.clear();
 		}

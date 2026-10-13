@@ -98,7 +98,7 @@ void drawCar(Pose pose, int num, Color color, double alpha, pcl::visualization::
 	renderBox(viewer, box, num, color, alpha);
 }
 
-Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=60){
+Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=5){
 
     // Defining a rotation matrix and translation vector
   	Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
@@ -139,15 +139,15 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
     }
 }
 
-Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=60){
+Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=5){
 
     pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
     // Setting max number of registration iterations.
   	ndt.setMaximumIterations (iterations);
     ndt.setInputSource (source);
     ndt.setInputTarget (target);
-    ndt.setTransformationEpsilon (.000000001);
-  	// ndt.setStepSize (1);
+    ndt.setTransformationEpsilon (.0001);
+  	ndt.setStepSize (1);
   	ndt.setResolution (1);
     
     pcl::console::TicToc time;
@@ -159,16 +159,16 @@ Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ndt (new pcl::PointCloud<pcl::PointXYZ>);
   	ndt.align (*cloud_ndt, init_guess);
 
-    cout << "Normal Distributions Transform has converged:" << ndt.hasConverged () << " score: " << ndt.getFitnessScore () <<  " time: " << time.toc() <<  " ms" << endl;
+    cout << "Normal Distributions Transform has converged:" << ndt.hasConverged() << " score: " << ndt.getFitnessScore() <<  " time: " << time.toc() <<  " ms" << endl;
 
-    Eigen::Matrix4d transformation_matrix = ndt.getFinalTransformation ().cast<double>();
+    Eigen::Matrix4d transformation_matrix = ndt.getFinalTransformation().cast<double>();
 
     return transformation_matrix;
 
 }
 
 int main(){
-    bool Icp = true;
+    bool Icp = false;
     bool first_scan = true;
 
 	auto client = cc::Client("localhost", 2000);
@@ -281,7 +281,7 @@ int main(){
             vg.setLeafSize(filterRes, filterRes, filterRes);
             vg.filter(*cloudFiltered);
 			// TODO: Find pose transform by using ICP or NDT matching
-			Eigen::Matrix4f pose_transform;
+			Eigen::Matrix4d pose_transform;
 			pose_transform  = Icp ? ICP(mapCloud, cloudFiltered, pose) : NDT(mapCloud,cloudFiltered, pose);
             pose = getPose(pose_transform);
 
