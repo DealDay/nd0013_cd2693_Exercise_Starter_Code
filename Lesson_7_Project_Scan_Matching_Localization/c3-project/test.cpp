@@ -292,7 +292,7 @@ int main(){
 			// TODO: Change `scanCloud` below to your transformed scan
 			renderPointCloud(viewer, transformed_scan, "scan", Color(1,0,0) );
             pose.position.x += 0.5;
-            pose.position.z += 1.8;
+            pose.position.z -= 1.8;
 
 			viewer->removeAllShapes();
 			drawCar(pose, 1,  Color(0,1,0), 0.35, viewer);
