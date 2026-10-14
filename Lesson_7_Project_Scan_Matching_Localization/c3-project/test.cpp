@@ -220,7 +220,7 @@ int main(){
 		if(new_scan){
 			auto scan = boost::static_pointer_cast<csd::LidarMeasurement>(data);
 			for (auto detection : *scan){
-				if((detection.x*detection.x + detection.y*detection.y + detection.z*detection.z) > 8.0){
+				if((detection.x*detection.x + detection.y*detection.y + detection.z*detection.z) > 50.0){
 					pclCloud.points.push_back(PointT(detection.x, detection.y, detection.z));
 				}
 			}
@@ -283,7 +283,7 @@ int main(){
 			// TODO: Find pose transform by using ICP or NDT matching
 			Eigen::Matrix4d pose_transform;
 			pose_transform  = Icp ? ICP(mapCloud, cloudFiltered, pose) : NDT(mapCloud,cloudFiltered, pose);
-            pose = getPose(pose_transform) - poseRef;
+            pose = getPose(pose_transform);
 
 			// TODO: Transform scan so it aligns with ego's actual pose and render that scan
             PointCloudT::Ptr transformed_scan(new PointCloudT);
@@ -291,6 +291,8 @@ int main(){
 			viewer->removePointCloud("scan");
 			// TODO: Change `scanCloud` below to your transformed scan
 			renderPointCloud(viewer, transformed_scan, "scan", Color(1,0,0) );
+            pose.position.x += 0.5;
+            pose.position.z += 1.8;
 
 			viewer->removeAllShapes();
 			drawCar(pose, 1,  Color(0,1,0), 0.35, viewer);
