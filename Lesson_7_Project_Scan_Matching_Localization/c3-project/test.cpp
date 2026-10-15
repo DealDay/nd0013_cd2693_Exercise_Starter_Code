@@ -148,7 +148,7 @@ Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
   	ndt.setMaximumIterations (iterations);
     ndt.setInputSource (source);
     ndt.setInputTarget (target);
-    ndt.setTransformationEpsilon (.0001);
+    ndt.setTransformationEpsilon (.001);
   	ndt.setStepSize (0.1);
   	ndt.setResolution (1);
     
@@ -229,12 +229,12 @@ int main(){
 		if(new_scan){
 			auto scan = boost::static_pointer_cast<csd::LidarMeasurement>(data);
 			for (auto detection : *scan){
-				if((detection.point.x*detection.point.x + detection.point.y*detection.point.y + detection.point.z*detection.point.z) > 50.0){
-					pclCloud.points.push_back(PointT(detection.point.x, detection.point.y, detection.point.z));
-				}
-				// if((detection.x*detection.x + detection.y*detection.y + detection.z*detection.z) > 50.0){
-				// 	pclCloud.points.push_back(PointT(detection.x, detection.y, detection.z));
+				// if((detection.point.x*detection.point.x + detection.point.y*detection.point.y + detection.point.z*detection.point.z) > 50.0){
+				// 	pclCloud.points.push_back(PointT(detection.point.x, detection.point.y, detection.point.z));
 				// }
+				if((detection.x*detection.x + detection.y*detection.y + detection.z*detection.z) > 50.0){
+					pclCloud.points.push_back(PointT(detection.x, detection.y, detection.z));
+				}
 			}
 			if(pclCloud.points.size() > 5000){ // CANDO: Can modify this value to get different scan resolutions
 				lastScanTime = std::chrono::system_clock::now();
