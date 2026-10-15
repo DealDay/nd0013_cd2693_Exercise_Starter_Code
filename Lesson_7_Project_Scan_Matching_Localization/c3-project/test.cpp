@@ -136,7 +136,9 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
   		transformation_matrix = icp.getFinalTransformation ().cast<double>();
   		transformation_matrix =  transformation_matrix * initTransform;
   		//print4x4Matrix(transformation_matrix);
-    }
+		return transformation_matrix;
+    }else cout << "\nICP has not converged." << std::endl;
+	return transformation_matrix;
 }
 
 Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=5){
@@ -159,11 +161,18 @@ Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ndt (new pcl::PointCloud<pcl::PointXYZ>);
   	ndt.align (*cloud_ndt, init_guess);
 
-    cout << "Normal Distributions Transform has converged:" << ndt.hasConverged() << " score: " << ndt.getFitnessScore() <<  " time: " << time.toc() <<  " ms" << endl;
+    // cout << "Normal Distributions Transform has converged:" << ndt.hasConverged() << " score: " << ndt.getFitnessScore() <<  " time: " << time.toc() <<  " ms" << endl;
 
-    Eigen::Matrix4d transformation_matrix = ndt.getFinalTransformation().cast<double>();
+    
 
-    return transformation_matrix;
+	if(ndt.hasConverged()){
+		Eigen::Matrix4d transformation_matrix = ndt.getFinalTransformation().cast<double>();
+    	return transformation_matrix;
+	}else{
+		cout << "NDT has not converged." << endl;
+		Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity();
+		return transformation_matrix;
+	}
 
 }
 
@@ -220,9 +229,12 @@ int main(){
 		if(new_scan){
 			auto scan = boost::static_pointer_cast<csd::LidarMeasurement>(data);
 			for (auto detection : *scan){
-				if((detection.x*detection.x + detection.y*detection.y + detection.z*detection.z) > 50.0){
-					pclCloud.points.push_back(PointT(detection.x, detection.y, detection.z));
+				if((detection.point.x*detection.point.x + detection.point.y*detection.point.y + detection.point.z*detection.point.z) > 50.0){
+					pclCloud.points.push_back(PointT(detection.point.x, detection.point.y, detection.point.z));
 				}
+				// if((detection.x*detection.point.x + detection.y*detection.point.y + detection.z*detection.z) > 50.0){
+				// 	pclCloud.points.push_back(PointT(detection.x, detection.y, detection.z));
+				// }
 			}
 			if(pclCloud.points.size() > 5000){ // CANDO: Can modify this value to get different scan resolutions
 				lastScanTime = std::chrono::system_clock::now();
