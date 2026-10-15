@@ -98,7 +98,7 @@ void drawCar(Pose pose, int num, Color color, double alpha, pcl::visualization::
 	renderBox(viewer, box, num, color, alpha);
 }
 
-Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=5){
+Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=25){
 
     // Defining a rotation matrix and translation vector
   	Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
@@ -141,7 +141,7 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
 	return transformation_matrix;
 }
 
-Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=5){
+Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=25){
 
     pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
     // Setting max number of registration iterations.
@@ -149,7 +149,7 @@ Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
     ndt.setInputSource (source);
     ndt.setInputTarget (target);
     ndt.setTransformationEpsilon (.0001);
-  	ndt.setStepSize (1);
+  	ndt.setStepSize (0.1);
   	ndt.setResolution (1);
     
     pcl::console::TicToc time;
@@ -232,7 +232,7 @@ int main(){
 				if((detection.point.x*detection.point.x + detection.point.y*detection.point.y + detection.point.z*detection.point.z) > 50.0){
 					pclCloud.points.push_back(PointT(detection.point.x, detection.point.y, detection.point.z));
 				}
-				// if((detection.x*detection.point.x + detection.y*detection.point.y + detection.z*detection.z) > 50.0){
+				// if((detection.x*detection.x + detection.y*detection.y + detection.z*detection.z) > 50.0){
 				// 	pclCloud.points.push_back(PointT(detection.x, detection.y, detection.z));
 				// }
 			}
@@ -289,7 +289,7 @@ int main(){
 			// TODO: (Filter scan using voxel filter)
             pcl::VoxelGrid<PointT> vg;
             vg.setInputCloud(scanCloud);
-            double filterRes = 0.5; 
+            double filterRes = 0.3; 
             vg.setLeafSize(filterRes, filterRes, filterRes);
             vg.filter(*cloudFiltered);
 			// TODO: Find pose transform by using ICP or NDT matching
@@ -303,8 +303,7 @@ int main(){
 			viewer->removePointCloud("scan");
 			// TODO: Change `scanCloud` below to your transformed scan
 			renderPointCloud(viewer, transformed_scan, "scan", Color(1,0,0) );
-            pose.position.x += 0.5;
-            pose.position.z -= 1.8;
+            // pose.position.x += 0.
 
 			viewer->removeAllShapes();
 			drawCar(pose, 1,  Color(0,1,0), 0.35, viewer);
