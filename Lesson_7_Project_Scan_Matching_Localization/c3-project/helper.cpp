@@ -39,25 +39,9 @@ Eigen::Matrix4d transform3D(double yaw, double pitch, double roll, double xt, do
 
 Pose getPose(Eigen::Matrix4d matrix){
 
-	// Pose pose(Point(matrix(0,3), matrix(1,3), matrix(2,3)), Rotate(atan2(matrix(1, 0),matrix(0, 0)), atan2(-matrix(2,0), sqrt(matrix(2,1)*matrix(2,1) + matrix(2,2)*matrix(2,2))), atan2(matrix(2,1),matrix(2,2))));
-	// return pose;
-	// Position is in the last column (indices 0,3; 1,3; 2,3)
-    Point position(matrix(0,3), matrix(1,3), matrix(2,3));
-
-    // Rotation extraction
-    // Assuming matrix transforms from Sensor Frame to Map Frame (Columns are Sensor axes in Map space)
-    
-    // 1. Yaw: Angle of the X-axis projected onto the XY plane
-    double yaw = atan2(matrix(1, 0), matrix(0, 0));
-
-    // 2. Pitch: Angle of the X-axis projected onto the XZ plane
-    double pitch = atan2(-matrix(2,0), sqrt(matrix(2,1)*matrix(2,1) + matrix(2,2)*matrix(2,2)));
-
-    // 3. Roll: Angle of the Z-axis projected onto the YZ plane
-    // Use indices (1,2) and (2,2) for the Y and Z components of the Z-axis
-    double roll = atan2(matrix(1,2), matrix(2,2));
-
-    return Pose(position, Rotate(yaw, pitch, roll));
+	Pose pose(Point(matrix(0,3), matrix(1,3), matrix(2,3)), Rotate(atan2(matrix(1, 0),matrix(0, 0)), atan2(-matrix(2,0), sqrt(matrix(2,1)*matrix(2,1) + matrix(2,2)*matrix(2,2))), atan2(matrix(2,1),matrix(2,2))));
+	return pose;
+	
 }
 
 double getDistance(Point p1, Point p2){

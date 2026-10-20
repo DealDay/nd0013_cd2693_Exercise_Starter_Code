@@ -98,7 +98,7 @@ void drawCar(Pose pose, int num, Color color, double alpha, pcl::visualization::
 	renderBox(viewer, box, num, color, alpha);
 }
 
-Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=25){
+Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=60){
 
     // Defining a rotation matrix and translation vector
   	Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
@@ -137,19 +137,21 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
   		transformation_matrix =  transformation_matrix * initTransform;
   		//print4x4Matrix(transformation_matrix);
 		return transformation_matrix;
-    }else cout << "\nICP has not converged." << std::endl;
-	return transformation_matrix;
+    }else {
+		cout << "\nICP has not converged." << std::endl;
+		return initTransform;
+	}
 }
 
-Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=25){
+Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose, int iterations=60){
 
     pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
     // Setting max number of registration iterations.
   	ndt.setMaximumIterations (iterations);
     ndt.setInputSource (source);
     ndt.setInputTarget (target);
-    ndt.setTransformationEpsilon (.001);
-  	ndt.setStepSize (0.1);
+    ndt.setTransformationEpsilon (.0001);
+  	ndt.setStepSize (1);
   	ndt.setResolution (1);
     
     pcl::console::TicToc time;
@@ -170,8 +172,8 @@ Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
     	return transformation_matrix;
 	}else{
 		cout << "NDT has not converged." << endl;
-		Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity();
-		return transformation_matrix;
+		// Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity();
+		return init_guess.cast<double>();
 	}
 
 }
@@ -232,7 +234,7 @@ int main(){
 				// if((detection.point.x*detection.point.x + detection.point.y*detection.point.y + detection.point.z*detection.point.z) > 50.0){
 				// 	pclCloud.points.push_back(PointT(detection.point.x, detection.point.y, detection.point.z));
 				// }
-				if((detection.x*detection.x + detection.y*detection.y + detection.z*detection.z) > 50.0){
+				if((detection.x*detection.x + detection.y*detection.y + detection.z*detection.z) > 8.0){
 					pclCloud.points.push_back(PointT(detection.x, detection.y, detection.z));
 				}
 			}
@@ -285,11 +287,10 @@ int main(){
                 first_scan = false;
             }
 			
-			new_scan = true;
 			// TODO: (Filter scan using voxel filter)
             pcl::VoxelGrid<PointT> vg;
             vg.setInputCloud(scanCloud);
-            double filterRes = 0.3; 
+            double filterRes = 0.5; 
             vg.setLeafSize(filterRes, filterRes, filterRes);
             vg.filter(*cloudFiltered);
 			// TODO: Find pose transform by using ICP or NDT matching
@@ -330,6 +331,7 @@ int main(){
 		}
 
 			pclCloud.points.clear();
+			new_scan = true;
 		}
   	}
 	return 0;
