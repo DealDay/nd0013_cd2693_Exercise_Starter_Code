@@ -305,7 +305,8 @@ int main(){
 			// TODO: Change `scanCloud` below to your transformed scan
 			renderPointCloud(viewer, transformed_scan, "scan", Color(1,0,0) );
             // pose.position.x += 0.
-
+			cout << "Pose: x: " << pose.position.x << "Pose: y: " << pose.position.y 
+			<< "Truepose: x: " << truePose.position.x << "Truepose: y: " << truePose.position.y;
 			viewer->removeAllShapes();
 			drawCar(pose, 1,  Color(0,1,0), 0.35, viewer);
           
