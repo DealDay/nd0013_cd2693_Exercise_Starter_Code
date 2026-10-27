@@ -122,7 +122,7 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
   	icp.setInputSource (transformSource);
   	icp.setInputTarget (target);
     icp.setMaxCorrespondenceDistance (2);
-    //icp.setTransformationEpsilon(0.001);
+    icp.setTransformationEpsilon(0.000001);
     //icp.setEuclideanFitnessEpsilon(.05);
     //icp.setRANSACOutlierRejectionThreshold (10);
 
@@ -150,9 +150,10 @@ Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
   	ndt.setMaximumIterations (iterations);
     ndt.setInputSource (source);
     ndt.setInputTarget (target);
-    ndt.setTransformationEpsilon (.0001);
+    ndt.setTransformationEpsilon (.000001);
+	ndt.setMaxCorrespondenceDistance (2);
   	ndt.setStepSize (1);
-  	ndt.setResolution (1);
+  	ndt.setResolution (3);
     
     pcl::console::TicToc time;
     time.tic ();
@@ -232,7 +233,7 @@ int main(){
 			auto scan = boost::static_pointer_cast<csd::LidarMeasurement>(data);
 			for (auto detection : *scan){
 				if((detection.x*detection.x + detection.y*detection.y + detection.z*detection.z) > 8.0){
-					pclCloud.points.push_back(PointT(-detection.y, detection.x, detection.z));
+					pclCloud.points.push_back(PointT(-detection.y, detection.x, -detection.z));
 				}
 			}
 			if(pclCloud.points.size() > 5000){ // CANDO: Can modify this value to get different scan resolutions
