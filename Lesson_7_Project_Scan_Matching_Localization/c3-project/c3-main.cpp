@@ -132,7 +132,7 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
 
   	if (icp.hasConverged ())
   	{
-  		std::cout << "\nICP has converged, score is " << icp.getFitnessScore () << std::endl;
+  		// std::cout << "\nICP has converged, score is " << icp.getFitnessScore () << std::endl;
   		transformation_matrix = icp.getFinalTransformation ().cast<double>();
   		transformation_matrix =  transformation_matrix * initTransform;
   		//print4x4Matrix(transformation_matrix);
@@ -179,7 +179,7 @@ Eigen::Matrix4d NDT(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
 }
 
 int main(){
-    bool Icp = false;
+    bool Icp = true;
     bool first_scan = true;
 
 	auto client = cc::Client("localhost", 2000);
@@ -231,9 +231,6 @@ int main(){
 		if(new_scan){
 			auto scan = boost::static_pointer_cast<csd::LidarMeasurement>(data);
 			for (auto detection : *scan){
-				// if((detection.point.x*detection.point.x + detection.point.y*detection.point.y + detection.point.z*detection.point.z) > 50.0){
-				// 	pclCloud.points.push_back(PointT(detection.point.x, detection.point.y, detection.point.z));
-				// }
 				if((detection.x*detection.x + detection.y*detection.y + detection.z*detection.z) > 8.0){
 					pclCloud.points.push_back(PointT(-detection.y, detection.x, detection.z));
 				}
